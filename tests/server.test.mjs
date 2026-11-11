@@ -166,6 +166,18 @@ test('rename and disable device', async () => {
   assert.equal((await call('/api/state')).data.profile.devices.length, 2);
 });
 
+test('Apple TV and other non-iOS devices are left out of the iOS profile', async () => {
+  mock.st.devices.push({ type: 'devices', id: 'TV1', attributes: { name: 'Apple TV', udid: 'aaaabbbbccccddddeeeeffff0000111122223333', platform: 'IOS', status: 'ENABLED', deviceClass: 'APPLE_TV', model: 'Apple TV (4th generation)', addedDate: new Date().toISOString() } });
+  const r = await call('/api/profile/rebuild', { body: {} });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+  const st = (await call('/api/state')).data;
+  assert.ok(st.devices.some((d) => d.cls === 'APPLE_TV'), 'Apple TV still listed');
+  assert.ok(!st.profile.devices.includes('aaaabbbbccccddddeeeeffff0000111122223333'), 'Apple TV not in profile');
+  assert.ok(st.ready);
+  mock.st.devices = mock.st.devices.filter((d) => d.id !== 'TV1');
+  await call('/api/devices/sync', { body: {} });
+});
+
 test('family access is limited to installing', async () => {
   const admin = cookie;
   cookie = ''; assert.equal((await call('/api/family/state')).status, 401);

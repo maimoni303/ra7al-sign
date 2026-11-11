@@ -49,6 +49,7 @@ export function startMockAsc({ publicKey, keyId, issuerId }) {
     }
     if (p === '/v1/profiles' && req.method === 'POST') {
       const r = body.data.relationships, uuid = crypto.randomUUID().toUpperCase();
+      if (r.devices.data.some((x) => !['IPHONE', 'IPAD', 'IPOD'].includes(st.devices.find((d) => d.id === x.id).attributes.deviceClass))) return err(409, 'ENTITY_ERROR', 'There is a problem with the request entity: Invalid deviceClass for profile type.');
       const udids = r.devices.data.map((x) => st.devices.find((d) => d.id === x.id).attributes.udid);
       const bundle = st.bundleIds.find((b) => b.id === r.bundleId.data.id).attributes.identifier;
       const xml = `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>Name</key><string>${body.data.attributes.name}</string><key>UUID</key><string>${uuid}</string><key>TeamIdentifier</key><array><string>TEAM123456</string></array><key>ExpirationDate</key><date>${new Date(Date.now() + 360 * 864e5).toISOString().replace(/\.\d+Z$/, 'Z')}</date><key>ProvisionedDevices</key><array>${udids.map((x) => `<string>${x}</string>`).join('')}</array><key>Entitlements</key><dict><key>application-identifier</key><string>TEAM123456.${bundle}</string></dict></dict></plist>`;

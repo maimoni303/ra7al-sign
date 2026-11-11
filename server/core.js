@@ -67,6 +67,9 @@ export async function renameDevice(devId, name) {
 }
 
 // ---------- ملف التعريف (Ad Hoc بمعرف عام com.ra7al.sign.*) ----------
+const IOS_CLASSES = new Set(['IPHONE', 'IPAD', 'IPOD']);
+export const isIosDevice = (x) => !x.cls || IOS_CLASSES.has(String(x.cls).toUpperCase());
+
 export async function rebuildProfile() {
   const k = keyOf(); if (!k) throw new Error('لا يوجد مفتاح API');
   const d = db(); const f = certFiles();
@@ -74,7 +77,8 @@ export async function rebuildProfile() {
   const ident = `${d.settings.bundlePrefix}.*`;
   const b = await asc.ensureBundleId(k, ident);
   d.bundle = { id: b.id, identifier: ident };
-  const devs = (await syncDevices()).filter((x) => x.status === 'enabled');
+  // آبل لا تقبل Apple TV أو Mac أو الساعة في ملف تعريف iOS — نضمّن الآيفون والآيباد والآيبود فقط
+  const devs = (await syncDevices()).filter((x) => x.status === 'enabled' && isIosDevice(x));
   if (!devs.length) throw new Error('لا توجد أجهزة مسجلة — سجّل جوالك أولًا من صفحة العائلة');
   if (d.profile && d.profile.id && d.profile.source === 'asc') await asc.deleteProfile(k, d.profile.id);
   const p = await asc.createProfile(k, { name: `RA7AL Sign ${new Date().toISOString().slice(0, 10)} ${id(3)}`, bundleIdId: b.id, certId: d.cert.id, deviceIds: devs.map((x) => x.id) });
