@@ -175,6 +175,7 @@ async function route(req, res) {
     if (!e) return send(res, 404, page('رابط منتهي', `${logo}<h1>الرابط غير صالح أو استُخدم</h1><p>اطلب رابطًا جديدًا من صاحب الحساب.</p>`), 'text/html; charset=utf-8');
     return send(res, 200, page('تسجيل جهازك', `${logo}<h1>تسجيل جهازك في رحّال للتوقيع</h1><p class="muted">مرحبًا ${esc(e.name)} — خطوة واحدة فقط:</p>
       <ol><li>افتح هذه الصفحة من <b>Safari</b> على الآيفون.</li><li>اضغط الزر بالأسفل ثم «سماح».</li><li>افتح <b>الإعدادات ← تم تنزيل ملف التعريف ← تثبيت</b>.</li></ol>
+      ${baseUrl(req).startsWith('https:') ? '' : '<p class="muted small" style="color:#b45309">تنبيه: هذا الرابط غير آمن (http)، وأنظمة iOS الحديثة ترفض ملف التسجيل عبره بخطأ «Profile Installation Failed». استخدم الرابط الآمن (https) من صاحب الحساب.</p>'}
       <a class="btn primary" href="/e/${esc(e.token)}/profile.mobileconfig">تنزيل ملف التسجيل</a>
       <p class="muted small">الملف يرسل معرّف جهازك فقط لتسجيله، ولا يغيّر أي إعداد، ويمكنك حذفه بعدها.</p>`), 'text/html; charset=utf-8');
   }
