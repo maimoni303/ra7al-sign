@@ -40,10 +40,10 @@ jobs:
         run: |
           docker run --rm --entrypoint zsign ra7al-sign:test -v
           docker run --rm --entrypoint openssl ra7al-sign:test version
-          docker run -d --name t -p 8787:8787 ra7al-sign:test
+          docker run -d --name ra7al-test -p 8787:8787 ra7al-sign:test
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8787/api/ping && break; sleep 1; done
           curl -sf http://127.0.0.1:8787/ | grep -q "رحّال للتوقيع"
-          docker logs t
+          docker logs ra7al-test
       - name: Push multi-arch image
         uses: docker/build-push-action@v6
         with:
