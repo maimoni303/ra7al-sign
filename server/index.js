@@ -261,7 +261,7 @@ async function route(req, res) {
       const key = { issuerId: issuerId.trim(), keyId: keyId.trim(), p8 };
       try { await asc.test(key); } catch (e) { return fail(res, 400, `apple: ${e.message}`); }
       db().asc = key; save(true); log('asc', 'تم ربط مفتاح App Store Connect');
-      try { await C.ensureCertificate(); await C.syncDevices(); } catch (e) { return json(res, 200, { ok: true, warning: e.message }); }
+      try { await C.ensureCertificate(); await C.syncDevices(); await C.rebuildProfile(); } catch (e) { log('error', e.message); return json(res, 200, { ok: true, warning: e.message }); }
       return json(res, 200, { ok: true });
     }
     if (r === 'asc-key' && m === 'DELETE') { db().asc = null; save(true); return json(res, 200, { ok: true }); }
@@ -275,7 +275,7 @@ async function route(req, res) {
         return json(res, 200, { ok: true, ...out });
       } catch (e) { return fail(res, 400, e.message); }
     }
-    if (r === 'devices/sync' && m === 'POST') { try { return json(res, 200, { ok: true, devices: await C.syncDevices() }); } catch (e) { return fail(res, 400, e.message); } }
+    if (r === 'devices/sync' && m === 'POST') { try { const devices = await C.syncDevices(); let warning; if (!C.ready() && db().asc) { try { await C.rebuildProfile(); } catch (e) { warning = e.message; log('error', e.message); } } return json(res, 200, { ok: true, devices, warning }); } catch (e) { return fail(res, 400, e.message); } }
     if ((mm = r.match(/^devices\/([\w-]+)$/)) && m === 'POST' && !['add', 'sync'].includes(mm[1])) {
       const b = (await body(req)).json();
       try {

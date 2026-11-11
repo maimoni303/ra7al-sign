@@ -23,7 +23,7 @@ const L = {
     addDeviceNote: 'أرسل له رابط التسجيل، يفتحه من Safari ويضغط «تثبيت» مرة واحدة، فيُضاف جهازه تلقائيًا وتُعاد توقيع التطبيقات له.',
     deviceName: 'اسم الجهاز', deviceNamePh: 'مثال: جوال أبو فلان', makeLink: 'إنشاء رابط التسجيل', pendingLinks: 'روابط بانتظار الفتح', sync: 'مزامنة مع آبل', manualUdid: 'إضافة يدوية بالـ UDID',
     disable: 'إيقاف', enable: 'تفعيل', rename: 'تغيير الاسم', save: 'حفظ', limitNote: 'آبل تسمح بحذف الأجهزة مرة واحدة سنويًا عند تجديد العضوية، فسجّل فقط من تحتاجه.',
-    cert: 'الشهادة', certValid: 'شهادة المطوّر سارية', certExp: 'تنتهي', profile: 'ملف التعريف', deviceCount: 'أجهزة', renewCert: 'إنشاء شهادة جديدة', rebuild: 'تحديث ملف التعريف',
+    cert: 'الشهادة', certValid: 'شهادة المطوّر سارية', certExp: 'تنتهي', profile: 'ملف التعريف', deviceCount: 'أجهزة', renewCert: 'إنشاء شهادة جديدة', rebuild: 'تحديث ملف التعريف', makeProfile: 'إنشاء ملف التعريف', needProfile: 'الشهادة جاهزة، بقي إنشاء ملف التعريف لأجهزتك.',
     setupWizard: 'إعداد الشهادة', modeApi: 'مفتاح App Store Connect (موصى به — كل شيء آلي)', modeManual: 'رفع شهادة p12 وملف تعريف جاهزين',
     issuer: 'Issuer ID', keyId: 'Key ID', p8: 'ملف المفتاح AuthKey_XXXX.p8', p8Paste: 'أو الصق محتوى المفتاح', connect: 'ربط وإنشاء الشهادة', connected: 'تم الربط ✓',
     apiSteps: ['افتح appstoreconnect.apple.com من Safari وسجّل الدخول.', 'Users and Access ← Integrations ← App Store Connect API.', 'اضغط + لإنشاء مفتاح، الاسم: RA7AL Sign، الصلاحية: Admin.', 'انسخ Issuer ID و Key ID، ثم نزّل الملف .p8 (يُنزّل مرة واحدة فقط).', 'ارجع هنا وارفع الملف واضغط «ربط».'],
@@ -52,7 +52,7 @@ const L = {
     addDeviceNote: 'Send them the enrollment link; they open it in Safari and tap “Install” once. Their device is added and apps are re-signed for it.',
     deviceName: 'Device name', deviceNamePh: 'e.g. Dad’s iPhone', makeLink: 'Create enrollment link', pendingLinks: 'Links waiting to be opened', sync: 'Sync with Apple', manualUdid: 'Add manually by UDID',
     disable: 'Disable', enable: 'Enable', rename: 'Rename', save: 'Save', limitNote: 'Apple only lets you remove devices once a year at renewal, so register only who needs it.',
-    cert: 'Certificate', certValid: 'Developer certificate valid', certExp: 'Expires', profile: 'Provisioning profile', deviceCount: 'devices', renewCert: 'Create new certificate', rebuild: 'Refresh profile',
+    cert: 'Certificate', certValid: 'Developer certificate valid', certExp: 'Expires', profile: 'Provisioning profile', deviceCount: 'devices', renewCert: 'Create new certificate', rebuild: 'Refresh profile', makeProfile: 'Create provisioning profile', needProfile: 'Certificate is ready; the provisioning profile for your devices is still missing.',
     setupWizard: 'Certificate setup', modeApi: 'App Store Connect key (recommended — fully automatic)', modeManual: 'Upload a ready .p12 and profile',
     issuer: 'Issuer ID', keyId: 'Key ID', p8: 'Key file AuthKey_XXXX.p8', p8Paste: 'Or paste the key contents', connect: 'Connect & create certificate', connected: 'Connected ✓',
     apiSteps: ['Open appstoreconnect.apple.com in Safari and sign in.', 'Users and Access → Integrations → App Store Connect API.', 'Tap + to create a key, name: RA7AL Sign, access: Admin.', 'Copy the Issuer ID and Key ID, then download the .p8 (only downloadable once).', 'Come back here, upload the file and tap “Connect”.'],
@@ -317,7 +317,7 @@ function viewCert() {
   const left = S.ready ? Math.min(daysLeft(S.cert.expires), daysLeft(S.profile.expires)) : 0;
   const status = S.ready ? `<div class="card"><div class="row">${ring(left)}<div class="grow"><div class="b">${t('certValid')}</div><div class="small muted">${esc(S.cert.name)}</div><div class="small muted">${t('certExp')}: ${fmtDate(Math.min(S.cert.expires, S.profile.expires))}</div></div></div>
       <div class="item"><span>${t('profile')}</span><span class="ok b">${S.profile.devices.length} ${t('deviceCount')}</span></div>
-      ${S.asc ? `<div class="grid2"><button class="btn" id="rebuild">${t('rebuild')}</button><button class="btn" id="renew">${t('renewCert')}</button></div>` : ''}</div>` : '';
+      ${S.asc ? `<div class="grid2"><button class="btn" id="rebuild">${t('rebuild')}</button><button class="btn" id="renew">${t('renewCert')}</button></div>` : ''}</div>` : (S.asc && S.cert && !S.profile) ? `<div class="card"><div class="b">${t('certValid')}</div><div class="small muted">${esc(S.cert.name)}</div><div class="alert">${t('needProfile')}</div><button class="btn primary wide" id="rebuild">${t('makeProfile')}</button></div>` : '';
   v.innerHTML = `<h1>${t('cert')}</h1>${status}
     <details class="card" ${S.ready ? '' : 'open'}><summary>${t('setupWizard')}</summary>
       <div class="seg" style="margin-top:12px" id="mode"><button data-m="api" class="on">${t('modeApi')}</button><button data-m="manual">${t('modeManual')}</button></div>
