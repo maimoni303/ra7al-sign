@@ -114,6 +114,7 @@ async function receiveFiles(req, limit = 5 * 1048576) {
 }
 async function finishUpload(dest, upId, src) {
   let meta;
+  try { await T.unwrapNestedIpa(dest); } catch {}
   try { meta = await T.readIpaInfo(dest); } catch (e) { fs.rmSync(dest, { force: true }); throw Object.assign(e, { status: 400 }); }
   meta.size = fs.statSync(dest).size; meta.src = src || '';
   fs.writeFileSync(dest + '.json', JSON.stringify(meta));

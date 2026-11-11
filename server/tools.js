@@ -130,3 +130,33 @@ export function mapBundleId(prefix, orig) {
   const tail = String(orig || 'app').toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/\./g, '-').replace(/-+/g, '-').slice(0, 80);
   return `${prefix}.${tail}`;
 }
+
+// ---------- فك ملف مضغوط يحتوي IPA بداخله (مثل حِزم GitHub Actions) ----------
+// إذا لم يكن الملف IPA مباشرًا لكنه zip فيه ملف .ipa، نستخرج الـ IPA ونستبدل به الملف الأصلي.
+export function unwrapNestedIpa(file) {
+  return new Promise((resolve, reject) => {
+    yauzl.open(file, { lazyEntries: true, autoClose: false }, (err, zip) => {
+      if (err) return resolve(false);
+      let payload = false, inner = [];
+      zip.on('entry', (e) => {
+        if (/^Payload\//.test(e.fileName)) payload = true;
+        else if (/\.ipa$/i.test(e.fileName) && !/simulator/i.test(e.fileName)) inner.push(e);
+        zip.readEntry();
+      });
+      zip.on('end', () => {
+        if (payload || !inner.length) { zip.close(); return resolve(false); }
+        inner.sort((a, b) => b.uncompressedSize - a.uncompressedSize);
+        zip.openReadStream(inner[0], (e2, st) => {
+          if (e2) { zip.close(); return reject(e2); }
+          const tmp = file + '.inner';
+          const out = fs.createWriteStream(tmp);
+          st.pipe(out);
+          out.on('finish', () => { zip.close(); fs.renameSync(tmp, file); resolve(path.basename(inner[0].fileName)); });
+          out.on('error', (x) => { zip.close(); reject(x); });
+        });
+      });
+      zip.on('error', () => { zip.close(); resolve(false); });
+      zip.readEntry();
+    });
+  });
+}

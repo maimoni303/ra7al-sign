@@ -245,6 +245,19 @@ test('manual mode with p12 and mobileprovision', async () => {
   assert.equal(args[args.indexOf('-b') + 1], 'com.test.app', 'wildcard * keeps original bundle id');
 });
 
+test('a zip that wraps an IPA (GitHub Actions artifact) is unwrapped', async () => {
+  const ipa = makeIpa('Wrapped App', 'com.wrapped.app', '5.2');
+  const d = fs.mkdtempSync(path.join(TMP, 'art-'));
+  fs.copyFileSync(ipa, path.join(d, 'Wrapped-unsigned.ipa'));
+  fs.writeFileSync(path.join(d, 'Wrapped-Simulator.zip'), crypto.randomBytes(64));
+  const art = path.join(TMP, `artifact-${Date.now()}.zip`);
+  execFileSync('zip', ['-qr', art, '.'], { cwd: d });
+  const up = await call('/api/upload', { form: formWith('ipa', art, 'artifact.zip') });
+  assert.equal(up.status, 200, JSON.stringify(up.data));
+  assert.equal(up.data.bundleId, 'com.wrapped.app'); assert.equal(up.data.version, '5.2');
+});
+
+
 test('password change and login throttling', async () => {
   assert.equal((await call('/api/password', { body: { current: 'bad', password: 'NewPass-2026' } })).status, 401);
   assert.equal((await call('/api/password', { body: { current: 'Ra7al-Test-2026', password: 'NewPass-2026' } })).status, 200);
