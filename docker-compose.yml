@@ -1,0 +1,28 @@
+# رحّال للتوقيع — للتثبيت على ZimaOS (Custom App) أو أي Docker
+name: ra7al-sign
+services:
+  ra7al-sign:
+    image: ghcr.io/maimoni303/ra7al-sign:latest
+    container_name: ra7al-sign
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      TZ: Asia/Riyadh
+      # الرابط العام الآمن (https) الذي يفتحه الآيفون — مثال Tailscale Funnel:
+      PUBLIC_URL: ""
+    volumes:
+      - /DATA/AppData/ra7al-sign:/data
+x-casaos:
+  architectures: [amd64, arm64]
+  main: ra7al-sign
+  author: RA7AL AL3OMR
+  category: Utilities
+  icon: https://raw.githubusercontent.com/maimoni303/ra7al-sign/main/public/icon-512.png
+  title:
+    en_us: RA7AL Sign
+    ar_sa: رحّال للتوقيع
+  tagline:
+    en_us: Sign iPhone apps with your Apple developer account
+    ar_sa: توقيع تطبيقات الآيفون بحساب المطوّر الخاص بك
+  port_map: "8787"

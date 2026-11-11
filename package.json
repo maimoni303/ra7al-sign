@@ -1,0 +1,19 @@
+{
+  "name": "ra7al-sign",
+  "version": "1.0.0",
+  "private": true,
+  "description": "رحّال للتوقيع — توقيع تطبيقات الآيفون بشهادة حساب المطوّر الخاص بك على سيرفرك المنزلي",
+  "main": "server/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test tests/server.test.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "plist": "^3.1.0",
+    "bplist-parser": "^0.3.2",
+    "yauzl": "^3.2.0"
+  }
+}
