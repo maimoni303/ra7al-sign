@@ -56,9 +56,13 @@ function failTry(ip) { const t = tries.get(ip) || { n: 0, at: 0 }; t.n++; t.at =
 const ipOf = (req) => (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
 
 // ---------- العرض العام للحالة ----------
+const isWork = (a) => /nayifat|nayfat/i.test(`${a.origBundleId || ''} ${a.bundleId || ''}`);
+export const audienceOf = (a) => a.audience || (isWork(a) ? 'owner' : 'all');
+export const categoryOf = (a) => a.category || (isWork(a) ? 'work' : 'personal');
 function appView(a, base) {
   const k = sig(`app:${a.id}`);
   return {
+    audience: audienceOf(a), category: categoryOf(a),
     id: a.id, name: a.name, version: a.version, bundleId: a.bundleId, origBundleId: a.origBundleId, size: a.size, signedAt: a.signedAt,
     icon: a.icon ? `/i/${a.id}/icon.png?k=${k}` : null, needsResign: C.needsResign(a), rmExtensions: !!a.rmExtensions,
     install: `itms-services://?action=download-manifest&url=${encodeURIComponent(`${base}/i/${a.id}/manifest.plist?k=${k}`)}`,
@@ -68,7 +72,17 @@ function appView(a, base) {
 function state(req, role) {
   const d = db(), base = baseUrl(req);
   const apps = d.apps.filter((a) => fs.existsSync(path.join(dirs.apps, a.id, 'signed.ipa'))).map((a) => appView(a, base));
-  if (role === 'family') return { role, apps, settings: { lang: d.settings.lang, theme: d.settings.theme } };
+  if (role === 'family') return { role, apps: apps.filter((a) => a.audience === 'all'), settings: { lang: d.settings.lang, theme: d.settings.theme } };
+  if (role === 'store-family' || role === 'store-admin') {
+    const owner = role === 'store-admin';
+    const exp = Math.min(d.profile?.expires || Infinity, d.cert?.expires || Infinity);
+    return {
+      role: owner ? 'admin' : 'family', version: VERSION, apps: owner ? apps : apps.filter((a) => a.audience === 'all'),
+      settings: { lang: d.settings.lang, theme: d.settings.theme }, alertDays: d.settings.alertDays,
+      expires: Number.isFinite(exp) ? exp : null,
+      ...(owner ? { famUrl: `${base}/f`, storeUrl: `${base}/s`, hasFamilyPassword: !!d.familyAuth, devices: d.devices.length } : {}),
+    };
+  }
   const { p12Pass, ...cert } = d.cert || {};
   return {
     role, version: VERSION, base, https: base.startsWith('https://'), setup: !d.auth,
@@ -221,12 +235,18 @@ async function route(req, res) {
     }
     if (r === 'login' && m === 'POST') {
       const ip = ipOf(req); if (throttled(ip)) return fail(res, 429, 'wait');
-      const { password, family } = (await body(req)).json();
+      const { password, family, store } = (await body(req)).json();
+      if (store) {
+        if (checkPassword(db().auth, password)) { tries.delete(ip); return send(res, 200, { ok: true, role: 'admin' }, undefined, setCookie(newSession('admin', 180), 180)); }
+        if (checkPassword(db().familyAuth, password)) { tries.delete(ip); return send(res, 200, { ok: true, role: 'family' }, undefined, setCookie(newSession('family', 180), 180)); }
+        failTry(ip); return fail(res, 401, 'bad password');
+      }
       if (!family && checkPassword(db().auth, password)) { tries.delete(ip); return send(res, 200, { ok: true, role: 'admin' }, undefined, setCookie(newSession('admin'))); }
       if (family && checkPassword(db().familyAuth, password)) { tries.delete(ip); return send(res, 200, { ok: true, role: 'family' }, undefined, setCookie(newSession('family', 180), 180)); }
       failTry(ip); return fail(res, 401, 'bad password');
     }
     if (r === 'logout' && m === 'POST') { dropSession(ck.rs); return send(res, 200, { ok: true }, undefined, { 'Set-Cookie': 'rs=; Path=/; Max-Age=0' }); }
+    if (r === 'store/state' && m === 'GET') { if (!fam) return fail(res, 401, 'login'); return json(res, 200, state(req, admin ? 'store-admin' : 'store-family')); }
     if (r === 'family/state' && m === 'GET') { if (!fam) return fail(res, 401, 'login'); return json(res, 200, state(req, 'family')); }
     if (!admin) return fail(res, 401, 'login');
 
@@ -315,6 +335,13 @@ async function route(req, res) {
       return json(res, 200, { ok: true, job: job.id });
     }
     if ((mm = r.match(/^jobs\/([\w-]+)$/)) && m === 'GET') { const j = C.jobs.get(mm[1]); return j ? json(res, 200, j) : fail(res, 404, 'job'); }
+    if ((mm = r.match(/^apps\/([\w-]+)$/)) && m === 'POST') {
+      const a = db().apps.find((x) => x.id === mm[1]); if (!a) return fail(res, 404, 'app');
+      const b = (await body(req)).json();
+      if ('audience' in b) { if (!['all', 'owner'].includes(b.audience)) return fail(res, 400, 'audience'); a.audience = b.audience; }
+      if ('category' in b) { if (!['personal', 'work'].includes(b.category)) return fail(res, 400, 'category'); a.category = b.category; }
+      save(true); return json(res, 200, { ok: true });
+    }
     if ((mm = r.match(/^apps\/([\w-]+)$/)) && m === 'DELETE') { C.deleteApp(mm[1]); return json(res, 200, { ok: true }); }
     if (r === 'resign-all' && m === 'POST') { C.queueResignAll(); return json(res, 200, { ok: true }); }
     if (r === 'test-alert' && m === 'POST') { const ok = await C.notify('رحّال للتوقيع: هذا تنبيه تجريبي ✓'); return ok ? json(res, 200, { ok }) : fail(res, 400, 'webhook'); }
@@ -323,7 +350,7 @@ async function route(req, res) {
 
   // ----- ملفات الواجهة -----
   if (m !== 'GET' && m !== 'HEAD') return send(res, 405, 'method', 'text/plain');
-  let f = p === '/' || p === '/f' || p === '/f/' ? '/index.html' : p;
+  let f = ['/', '/f', '/f/', '/s', '/s/'].includes(p) ? '/index.html' : p;
   const full = path.join(PUB, path.normalize(f).replace(/^(\.\.[/\\])+/, ''));
   if (!full.startsWith(PUB) || !fs.existsSync(full) || fs.statSync(full).isDirectory()) return send(res, 404, 'not found', 'text/plain');
   const ext = path.extname(full);

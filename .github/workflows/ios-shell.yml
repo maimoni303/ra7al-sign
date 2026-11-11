@@ -34,10 +34,30 @@ jobs:
           sleep 25
           xcrun simctl spawn "$DEV" launchctl list | grep -q com.ra7al.shelltest && echo "✓ shell still running"
           xcrun simctl io "$DEV" screenshot ../shell-sim.png
+      - name: Store app — launch test against a real signing server on this Mac
+        run: |
+          set -e
+          npm ci --silent
+          mkdir -p /tmp/r7data
+          PORT=8787 DATA_DIR=/tmp/r7data ZSIGN_BIN=$PWD/tests/fake-zsign.mjs nohup node server/index.js > /tmp/r7srv.log 2>&1 &
+          for i in $(seq 30); do curl -fs http://127.0.0.1:8787/api/ping && break; sleep 1; done
+          curl -fs http://127.0.0.1:8787/s | grep -q 'رحّال للتوقيع'
+          python3 - <<'PY'
+          import json; c=json.load(open('ios-shell/store/app.json')); c['servers']=['http://127.0.0.1:9/s','http://127.0.0.1:8787/s']; json.dump(c,open('/tmp/store-test.json','w'),ensure_ascii=False)
+          PY
+          ios-shell/store/pack.sh ios-shell/bin/App-sim /tmp/store-test.json /tmp/store-sim.ipa
+          rm -rf /tmp/ss && mkdir /tmp/ss && cd /tmp/ss && unzip -q /tmp/store-sim.ipa && codesign -s - --force Payload/App.app
+          DEV=$(xcrun simctl list devices booted -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next(x['udid'] for v in d.values() for x in v))")
+          xcrun simctl install "$DEV" Payload/App.app; xcrun simctl launch "$DEV" com.ra7al.store
+          sleep 25
+          xcrun simctl spawn "$DEV" launchctl list | grep -q com.ra7al.store && echo "✓ store app running"
+          xcrun simctl io "$DEV" screenshot $GITHUB_WORKSPACE/store-sim.png
+      - name: Package the store app for iPhone (unsigned — signed on the home server)
+        run: ios-shell/store/pack.sh ios-shell/bin/App-device ios-shell/store/app.json RA7AL-Store.ipa
       - name: Publish the binaries to the shell-bin branch
         run: |
           set -e
-          mkdir pub && cp ios-shell/bin/App-device ios-shell/bin/App-sim shell-sim.png pub/
+          mkdir pub && cp ios-shell/bin/App-device ios-shell/bin/App-sim shell-sim.png store-sim.png RA7AL-Store.ipa pub/
           cd pub && git init -q -b shell-bin && git add -A
           git -c user.name="github-actions" -c user.email="actions@github.com" commit -qm "shell binaries ${{ github.sha }}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" shell-bin

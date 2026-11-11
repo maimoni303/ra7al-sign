@@ -78,8 +78,18 @@ static NSArray<NSString *> *Defaults(void) { return Cfg(@"R7Servers") ?: @[]; }
 }
 - (void)webView:(WKWebView *)w decidePolicyForNavigationAction:(WKNavigationAction *)a decisionHandler:(void (^)(WKNavigationActionPolicy))h {
     NSString *u = a.request.URL.absoluteString;
+    NSString *scheme = a.request.URL.scheme.lowercaseString ?: @"";
+    // Install links (itms-services), WhatsApp, phone, mail, maps… are handed to iOS; WebKit cannot open them itself.
+    if (scheme.length && ![@[@"http", @"https", @"about", @"blob", @"data", @"file"] containsObject:scheme]) {
+        [UIApplication.sharedApplication openURL:a.request.URL options:@{} completionHandler:nil];
+        h(WKNavigationActionPolicyCancel); return;
+    }
     if (self.base && ![u hasPrefix:self.base] && ([u hasPrefix:@"http"] || [u hasPrefix:@"mailto:"] || [u hasPrefix:@"tel:"])) { [UIApplication.sharedApplication openURL:a.request.URL options:@{} completionHandler:nil]; h(WKNavigationActionPolicyCancel); return; }
     h(WKNavigationActionPolicyAllow);
+}
+- (WKWebView *)webView:(WKWebView *)w createWebViewWithConfiguration:(WKWebViewConfiguration *)c forNavigationAction:(WKNavigationAction *)a windowFeatures:(WKWindowFeatures *)f {
+    if (a.request.URL) [UIApplication.sharedApplication openURL:a.request.URL options:@{} completionHandler:nil];
+    return nil;
 }
 - (void)webView:(WKWebView *)w didFailProvisionalNavigation:(WKNavigation *)n withError:(NSError *)e { if (self.base && e.code != NSURLErrorCancelled) [self showOffline]; }
 - (void)webView:(WKWebView *)w runJavaScriptAlertPanelWithMessage:(NSString *)msg initiatedByFrame:(WKFrameInfo *)f completionHandler:(void (^)(void))h {

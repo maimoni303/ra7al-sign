@@ -193,6 +193,45 @@ test('family access is limited to installing', async () => {
   cookie = admin;
 });
 
+test('store: owner sees all, family sees only shared apps, audience and category editable', async () => {
+  const admin = cookie;
+  // تطبيق عمل (النايفات) يُخفى عن العائلة تلقائيًا
+  const ipa = makeIpa('Nayifat Work', 'com.nayifat.custody', '5.2.0');
+  const up = await call('/api/upload', { form: formWith('ipa', ipa) }); assert.equal(up.status, 200);
+  const s = await call('/api/sign', { body: { uploadId: up.data.uploadId, name: 'عُهد النايفات' } });
+  const job = await waitJob(s.data.job); assert.equal(job.state, 'done', job.msg);
+  const workId = job.result.appId;
+  const st = (await call('/api/state')).data;
+  const w = st.apps.find((a) => a.id === workId); assert.equal(w.audience, 'owner'); assert.equal(w.category, 'work');
+  const per = st.apps.find((a) => a.id !== workId); assert.equal(per.audience, 'all'); assert.equal(per.category, 'personal');
+  // واجهة المتجر للمالك
+  const so = (await call('/api/store/state')).data;
+  assert.equal(so.role, 'admin'); assert.ok(so.apps.some((a) => a.id === workId)); assert.match(so.storeUrl, /\/s$/); assert.ok('devices' in so); assert.ok(so.expires > Date.now());
+  // صفحة /s تفتح الواجهة
+  const pg = await call('/s', { jar: false }); assert.equal(pg.status, 200); assert.match(pg.data.toString(), /رحّال للتوقيع/);
+  // دخول المتجر بكلمة العائلة → يرى المشترك فقط
+  cookie = '';
+  assert.equal((await call('/api/store/state')).status, 401);
+  assert.equal((await call('/api/login', { body: { password: 'wrong', store: true } })).status, 401);
+  const fl = await call('/api/login', { body: { password: 'family-2026', store: true } }); assert.equal(fl.data.role, 'family');
+  const sf = (await call('/api/store/state')).data;
+  assert.equal(sf.role, 'family'); assert.ok(!sf.apps.some((a) => a.id === workId)); assert.ok(!('storeUrl' in sf)); assert.ok(!('devices' in sf));
+  assert.ok(!(await call('/api/family/state')).data.apps.some((a) => a.id === workId), 'family page hides owner apps too');
+  assert.equal((await call(`/api/apps/${workId}`, { body: { audience: 'all' } })).status, 401, 'family cannot change audience');
+  // دخول المتجر بكلمة المالك → مالك
+  cookie = '';
+  const ol = await call('/api/login', { body: { password: 'Ra7al-Test-2026', store: true } }); assert.equal(ol.data.role, 'admin');
+  // تغيير من يراه والقسم
+  assert.equal((await call(`/api/apps/${workId}`, { body: { audience: 'nobody' } })).status, 400);
+  assert.equal((await call(`/api/apps/${workId}`, { body: { category: 'x' } })).status, 400);
+  assert.equal((await call('/api/apps/nope', { body: { audience: 'all' } })).status, 404);
+  assert.equal((await call(`/api/apps/${workId}`, { body: { audience: 'all', category: 'personal' } })).status, 200);
+  const w2 = (await call('/api/state')).data.apps.find((a) => a.id === workId); assert.equal(w2.audience, 'all'); assert.equal(w2.category, 'personal');
+  assert.equal((await call(`/api/apps/${workId}`, { body: { audience: 'owner', category: 'work' } })).status, 200);
+  assert.equal((await call(`/api/apps/${workId}`, { method: 'DELETE' })).status, 200);
+  cookie = admin;
+});
+
 test('settings, webhook alerts and validation', async () => {
   assert.equal((await call('/api/settings', { body: { publicUrl: 'not a url' } })).status, 400);
   assert.equal((await call('/api/settings', { body: { publicUrl: 'https://sign.example.ts.net', webhook: `http://127.0.0.1:${hook.address().port}/w`, alertDays: 999, lang: 'en', theme: 'light' } })).status, 200);

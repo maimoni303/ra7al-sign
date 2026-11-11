@@ -97,3 +97,13 @@ nav.tabs button.on { color: var(--accent); font-weight: 600; }
 body.simple { display: flex; justify-content: center; padding: 24px 16px; }
 .simple-card { background: var(--bg2); border-radius: 22px; padding: 22px; max-width: 460px; width: 100%; display: flex; flex-direction: column; gap: 12px; }
 .simple-card .logo { width: 44px; height: 44px; } .simple-card h1 { margin: 0; font-size: 21px; } .simple-card ol { line-height: 1.9; padding-inline-start: 22px; margin: 0; }
+.store .search { display: flex; align-items: center; gap: 8px; background: var(--bg2); border-radius: 14px; padding: 0 12px; min-height: 46px; color: var(--muted); }
+.store .search svg.i { width: 18px; height: 18px; flex-shrink: 0; }
+.store .search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fg); font-size: 15px; outline: none; min-height: 44px; }
+.store .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; } .store .chips::-webkit-scrollbar { display: none; }
+.store .chips button { flex-shrink: 0; border: 1px solid var(--line2); background: transparent; color: var(--fg); border-radius: 18px; min-height: 36px; padding: 0 14px; font-size: 14px; }
+.store .chips button.on { background: var(--accent); color: var(--on-accent); border-color: transparent; font-weight: 700; }
+.store .btn.upd { color: var(--accent); border-color: var(--accent); }
+.store .tag { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); } .store .tag svg.i { width: 12px; height: 12px; }
+.store .badge { display: inline-block; min-width: 18px; height: 18px; line-height: 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-size: 11px; padding: 0 5px; }
+.small { font-size: 13px; }

@@ -33,6 +33,13 @@ const L = {
     saved: 'تم الحفظ', error: 'خطأ', activity: 'سجل النشاط', none: 'لا يوجد', bundlePrefix: 'بادئة المعرّف',
     familyTitle: 'تطبيقات العائلة', familyNote: 'اضغط «تثبيت» ثم «تثبيت» مرة أخرى في النافذة، وتابع التحميل من الشاشة الرئيسية.',
     trustNote: 'أول مرة فقط: إذا ظهر «مطوّر غير موثوق» افتح الإعدادات ← عام ← VPN وإدارة الأجهزة ← وثّق المطوّر. ومع iOS 16+ فعّل «وضع المطوّر» من الإعدادات ← الخصوصية والأمان.',
+    store: 'متجر رحّال', storeSub: 'RA7AL AL3OMR STORE', storeLogin: 'دخول المتجر', storePass: 'كلمة المرور (كلمتك أو كلمة العائلة)',
+    search: 'ابحث عن تطبيق', all: 'الكل', personal: 'شخصية', work: 'العمل', updates: 'التحديثات', update: 'تحديث', installed: 'مثبّت', reinstall: 'إعادة التثبيت',
+    sApps: 'التطبيقات', sFamily: 'العائلة', sSettings: 'الإعدادات', ownerOnly: 'لك فقط', validFor: 'صالح', noMatch: 'لا توجد نتائج', noUpdates: 'كل تطبيقاتك محدّثة',
+    renewSoon: 'توقيع التطبيقات ينتهي بعد {d} يومًا — جدّد عضوية المطوّر ثم أعد التوقيع.', expired: 'انتهى توقيع التطبيقات — جدّد العضوية وأعد التوقيع.',
+    audience: 'من يراه', audAll: 'الجميع', audOwner: 'أنا فقط', category: 'القسم', markInstalled: 'تعيين كمثبّت',
+    famHow: 'لتثبيت التطبيقات على جوال أحد أفراد العائلة: سجّل جهازه أولًا من لوحة التوقيع (تبويب العائلة)، ثم أرسل له رابط المتجر.', storeLink: 'رابط المتجر', regDevices: 'الأجهزة المسجّلة',
+    famMember: 'هذا المتجر خاص بالعائلة. لأي تطبيق جديد أو مشكلة في التثبيت تواصل مع أبو ركان.', logout: 'تسجيل الخروج', about: 'عن المتجر', adminPanel: 'لوحة التوقيع',
     footer: 'رحّال للتوقيع · RA7AL AL3OMR · على سيرفرك المنزلي',
   },
   en: {
@@ -62,16 +69,27 @@ const L = {
     saved: 'Saved', error: 'Error', activity: 'Activity log', none: 'None', bundlePrefix: 'Bundle prefix',
     familyTitle: 'Family apps', familyNote: 'Tap “Install”, confirm “Install” in the popup, then watch it download on the home screen.',
     trustNote: 'First time only: if you see “Untrusted Developer”, go to Settings → General → VPN & Device Management → Trust. On iOS 16+ also enable Developer Mode in Settings → Privacy & Security.',
+    store: 'RA7AL Store', storeSub: 'RA7AL AL3OMR STORE', storeLogin: 'Store sign-in', storePass: 'Password (yours or the family one)',
+    search: 'Search apps', all: 'All', personal: 'Personal', work: 'Work', updates: 'Updates', update: 'Update', installed: 'Installed', reinstall: 'Reinstall',
+    sApps: 'Apps', sFamily: 'Family', sSettings: 'Settings', ownerOnly: 'Only you', validFor: 'valid', noMatch: 'No results', noUpdates: 'All your apps are up to date',
+    renewSoon: 'App signing ends in {d} days — renew the developer membership, then re-sign.', expired: 'App signing has expired — renew the membership and re-sign.',
+    audience: 'Who sees it', audAll: 'Everyone', audOwner: 'Only me', category: 'Section', markInstalled: 'Mark as installed',
+    famHow: 'To install on a family member’s phone: register the device first in the signing panel (Family tab), then send them the store link.', storeLink: 'Store link', regDevices: 'Registered devices',
+    famMember: 'This store is private to the family. For a new app or an install problem, contact Abu Rakan.', logout: 'Sign out', about: 'About', adminPanel: 'Signing panel',
     footer: 'RA7AL Sign · RA7AL AL3OMR · on your home server',
   },
 };
-let lang = 'ar', S = null, tab = 'sign', upload = null, famMode = location.pathname.startsWith('/f');
+let lang = 'ar', S = null, tab = 'sign', upload = null, famMode = location.pathname.startsWith('/f'), storeMode = location.pathname.startsWith('/s');
 const t = (k) => (L[lang][k] ?? L.ar[k] ?? k);
 const icon = (d) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const I = {
   sign: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
   apps: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
   family: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5c3 .2 5.5 2 5.5 5"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   cert: '<rect x="4" y="3" width="16" height="13" rx="2"/><path d="M8 8h8M8 11h5"/><circle cx="16" cy="18" r="3"/><path d="M14.5 20.5 14 23l2-1 2 1-.5-2.5"/>',
 };
 const logo = '<svg class="logo" viewBox="0 0 34 34" aria-hidden="true"><path d="M2 20 H10 C9 15 12 11 15 12 C16 12.5 17 14 17 14 C17 14 18 12.5 19 12 C22 11 25 15 24 20 L17 26 L10 20 M24 20 H32"/></svg>';
@@ -104,23 +122,23 @@ function applyLangTheme(l, th) {
 
 // ---------- الدخول ----------
 function authView(kind) {
-  const setup = kind === 'setup', fam = kind === 'family';
+  const setup = kind === 'setup', fam = kind === 'family', st = kind === 'store';
   $('#root').innerHTML = `<div class="auth"><form class="card" id="auth-form">
-    <div class="brand">${logo}<div><div class="t1">${t('app')}</div><div class="t2">${t('sub')}</div></div></div>
-    <h2>${setup ? t('setupTitle') : fam ? t('famLogin') : t('loginTitle')}</h2>${setup ? `<div class="note">${t('setupNote')}</div>` : ''}
-    <label class="field">${fam ? t('famPass') : t('password')}<input type="password" id="pw" autocomplete="${setup ? 'new-password' : 'current-password'}" required></label>
+    <div class="brand">${logo}<div><div class="t1">${st ? t('store') : t('app')}</div><div class="t2">${st ? t('storeSub') : t('sub')}</div></div></div>
+    <h2>${setup ? t('setupTitle') : st ? t('storeLogin') : fam ? t('famLogin') : t('loginTitle')}</h2>${setup ? `<div class="note">${t('setupNote')}</div>` : ''}
+    <label class="field">${st ? t('storePass') : fam ? t('famPass') : t('password')}<input type="password" id="pw" autocomplete="${setup ? 'new-password' : 'current-password'}" required></label>
     ${setup ? `<label class="field">${t('password2')}<input type="password" id="pw2" autocomplete="new-password" required></label>` : ''}
     <div class="err" id="auth-err"></div>
     <button class="btn primary big" type="submit">${setup ? t('create') : t('login')}</button>
-    <div class="row between"><button type="button" class="link" id="lang-t">${lang === 'ar' ? 'English' : 'العربية'}</button>${!setup ? `<button type="button" class="link" id="mode-t">${fam ? t('loginTitle') : t('famLogin')}</button>` : ''}</div>
+    <div class="row between"><button type="button" class="link" id="lang-t">${lang === 'ar' ? 'English' : 'العربية'}</button>${!setup && !st ? `<button type="button" class="link" id="mode-t">${fam ? t('loginTitle') : t('famLogin')}</button>` : ''}</div>
   </form></div>`;
-  $('#lang-t').onclick = () => { applyLangTheme(lang === 'ar' ? 'en' : 'ar', document.documentElement.dataset.theme); authView(kind); };
+  $('#lang-t').onclick = () => { if (st) prefs.set({ lang: lang === 'ar' ? 'en' : 'ar' }); applyLangTheme(lang === 'ar' ? 'en' : 'ar', st ? prefs.get().theme : document.documentElement.dataset.theme); authView(kind); };
   const mt = $('#mode-t'); if (mt) mt.onclick = () => { famMode = !fam; authView(fam ? 'login' : 'family'); };
   $('#auth-form').onsubmit = async (e) => {
     e.preventDefault(); const pw = $('#pw').value, er = $('#auth-err'); er.textContent = '';
     try {
       if (setup) { if (pw.length < 8) return (er.textContent = t('min8')); if (pw !== $('#pw2').value) return (er.textContent = t('mismatch')); await api('setup', { body: { password: pw } }); }
-      else await api('login', { body: { password: pw, family: fam } });
+      else await api('login', { body: st ? { password: pw, store: true } : { password: pw, family: fam } });
       boot();
     } catch (x) { er.textContent = errMsg(x); }
   };
@@ -246,9 +264,13 @@ function viewApps() {
     if (b.dataset.act === 'resign') { b.disabled = true; try { const r = await api('sign', { body: { appId: a.id } }); await waitJob(r.job); await refresh(); render(); toast(t('signed')); } catch (x) { toast(errMsg(x), 5000); b.disabled = false; } }
     if (b.dataset.act === 'more') {
       sheet(`<h2>${esc(a.name)}</h2><div class="small muted ltr">${esc(a.bundleId)}</div><div class="small muted">${t('size')}: ${mb(a.size)} · ${fmtDate(a.signedAt)}</div>
+        <div class="item"><span>${t('audience')}</span><span class="seg" id="m-aud"><button data-v="all" class="${a.audience === 'all' ? 'on' : ''}">${t('audAll')}</button><button data-v="owner" class="${a.audience === 'owner' ? 'on' : ''}">${t('audOwner')}</button></span></div>
+        <div class="item"><span>${t('category')}</span><span class="seg" id="m-cat"><button data-v="personal" class="${a.category === 'personal' ? 'on' : ''}">${t('personal')}</button><button data-v="work" class="${a.category === 'work' ? 'on' : ''}">${t('work')}</button></span></div>
         <a class="btn primary" href="${a.install}">${t('install')}</a><a class="btn" href="${a.download}" download>${t('download')}</a>
         <button class="btn" data-a="resign">${t('resign')}</button><button class="btn danger" data-a="del">${t('remove')}</button><button class="btn" data-a="x">${t('cancel')}</button>`, (s) => {
         s.onclick = async (ev) => {
+          const sg = ev.target.closest('#m-aud [data-v], #m-cat [data-v]');
+          if (sg) { const k = sg.parentElement.id === 'm-aud' ? 'audience' : 'category'; try { await api('apps/' + a.id, { body: { [k]: sg.dataset.v } }); a[k] = sg.dataset.v; $$('[data-v]', sg.parentElement).forEach((z) => z.classList.toggle('on', z === sg)); toast(t('saved')); await refresh(); } catch (er) { toast(errMsg(er)); } return; }
           const x = ev.target.closest('[data-a]')?.dataset.a; if (!x) return;
           if (x === 'x') closeSheet();
           if (x === 'resign') { closeSheet(); try { const r = await api('sign', { body: { appId: a.id } }); await waitJob(r.job); await refresh(); render(); toast(t('signed')); } catch (er) { toast(errMsg(er), 5000); } }
@@ -385,18 +407,112 @@ async function familyView() {
     <div class="alert info">${t('trustNote')}</div><div class="note" style="text-align:center">${t('footer')}</div></main></div>`;
 }
 
+// ---------- متجر رحّال (/s) ----------
+const prefs = {
+  get() { try { return JSON.parse(localStorage.getItem('r7store') || '{}'); } catch { return {}; } },
+  set(v) { try { localStorage.setItem('r7store', JSON.stringify({ ...prefs.get(), ...v })); } catch {} },
+};
+const instKey = (a) => `${a.version}|${a.signedAt}`;
+let sTab = 'apps', sCat = 'all', sQuery = '';
+function storeState(a) {
+  const inst = (prefs.get().inst || {})[a.id];
+  if (!inst) return 'new';
+  return inst === instKey(a) ? 'installed' : 'update';
+}
+function markInstalled(a) { const p = prefs.get(); prefs.set({ inst: { ...(p.inst || {}), [a.id]: instKey(a) } }); }
+function storeRow(a, days) {
+  const st = storeState(a);
+  const ic = a.icon ? `<img class="app-ic" src="${a.icon}" alt="">` : `<div class="app-ic">${esc((a.name || '?').slice(0, 1))}</div>`;
+  const meta = [esc(a.version || '—')];
+  if (days != null) meta.push(`${t('validFor')} ${Math.max(0, days)} ${t('days')}`);
+  const lock = a.audience === 'owner' ? `<span class="tag">${icon(I.lock)}${t('ownerOnly')}</span>` : '';
+  const btn = st === 'update' ? `<a class="btn small upd" href="${a.install}" data-inst="${a.id}">${t('update')}</a>`
+    : st === 'installed' ? `<a class="btn small" href="${a.install}" data-inst="${a.id}">${t('reinstall')}</a>`
+    : `<a class="btn primary small" href="${a.install}" data-inst="${a.id}">${t('install')}</a>`;
+  return `<div class="li" data-app="${a.id}">${ic}<div class="grow"><div class="t1">${esc(a.name)}</div><div class="t2">${meta.join(' · ')} ${lock}</div></div>${btn}</div>`;
+}
+function storeShell() {
+  const st = S, upd = st.apps.filter((a) => storeState(a) === 'update');
+  const tabs = [['apps', 'sApps', I.apps], ['updates', 'updates', I.refresh], ['family', 'sFamily', I.family], ['settings', 'sSettings', I.gear]];
+  $('#root').innerHTML = `<div id="app" class="store"><header class="top"><div class="brand">${logo}<div><div class="t1">${t('store')}</div><div class="t2">${t('storeSub')}</div></div></div></header>
+    <main id="sview"></main>
+    <nav class="tabs" id="stabs">${tabs.map(([k, l, ic]) => `<button data-tab="${k}" class="${sTab === k ? 'on' : ''}">${icon(ic)}<span>${t(l)}${k === 'updates' && upd.length ? ` <b class="badge">${upd.length}</b>` : ''}</span></button>`).join('')}</nav></div>`;
+  $('#stabs').onclick = (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; sTab = b.dataset.tab; storeShell(); };
+  ({ apps: sApps, updates: sUpdates, family: sFamily, settings: sSettings })[sTab]();
+  $('#sview').addEventListener('click', (e) => {
+    const a = e.target.closest('[data-inst]'); if (!a) return;
+    const app = S.apps.find((x) => x.id === a.dataset.inst); if (app) { markInstalled(app); setTimeout(storeShell, 1200); }
+  });
+}
+function daysLeftS() { return S.expires ? Math.floor((S.expires - Date.now()) / 864e5) : null; }
+function renewBanner() {
+  const d = daysLeftS(); if (d == null) return '';
+  if (d < 0) return `<div class="alert">${t('expired')}</div>`;
+  return d <= (S.alertDays || 30) ? `<div class="alert">${t('renewSoon').replace('{d}', d)}</div>` : '';
+}
+function sApps() {
+  const v = $('#sview'), d = daysLeftS();
+  const upd = S.apps.filter((a) => storeState(a) === 'update').length;
+  const chips = [['all', 'all'], ['personal', 'personal'], ['work', 'work'], ['updates', 'updates']];
+  const list = () => {
+    const q = sQuery.trim().toLowerCase();
+    let xs = S.apps.filter((a) => !q || `${a.name} ${a.bundleId}`.toLowerCase().includes(q));
+    if (sCat === 'personal' || sCat === 'work') xs = xs.filter((a) => a.category === sCat);
+    if (sCat === 'updates') xs = xs.filter((a) => storeState(a) === 'update');
+    $('#slist').innerHTML = xs.length ? xs.map((a) => storeRow(a, d)).join('') : `<div class="empty">${S.apps.length ? t('noMatch') : t('noApps')}</div>`;
+  };
+  v.innerHTML = `${renewBanner()}<label class="search">${icon(I.search)}<input id="sq" type="search" placeholder="${t('search')}" value="${esc(sQuery)}" autocomplete="off"></label>
+    <div class="chips" id="chips">${chips.map(([k, l]) => `<button data-c="${k}" class="${sCat === k ? 'on' : ''}">${t(l)}${k === 'updates' && upd ? ` ${upd}` : ''}</button>`).join('')}</div>
+    <div class="card"><div class="list" id="slist"></div></div><div class="alert info small">${t('trustNote')}</div>`;
+  list();
+  $('#sq').oninput = (e) => { sQuery = e.target.value; list(); };
+  $('#chips').onclick = (e) => { const b = e.target.closest('[data-c]'); if (!b) return; sCat = b.dataset.c; $$('#chips button').forEach((x) => x.classList.toggle('on', x === b)); list(); };
+}
+function sUpdates() {
+  const d = daysLeftS(), xs = S.apps.filter((a) => storeState(a) === 'update');
+  $('#sview').innerHTML = `${renewBanner()}<h1>${t('updates')}</h1><div class="card"><div class="list">${xs.length ? xs.map((a) => storeRow(a, d)).join('') : `<div class="empty">${t('noUpdates')}</div>`}</div></div>`;
+}
+function sFamily() {
+  const v = $('#sview');
+  if (S.role !== 'admin') { v.innerHTML = `<h1>${t('sFamily')}</h1><div class="card"><div class="note">${t('famMember')}</div></div>`; return; }
+  v.innerHTML = `<h1>${t('sFamily')}</h1>
+    <div class="card"><h2>${t('storeLink')}</h2><div class="note">${t('famHow')}</div><div class="ltr small muted">${esc(S.storeUrl)}</div>
+      ${S.hasFamilyPassword ? '' : `<div class="alert">${t('setFamPass')}</div>`}
+      <div class="grid2"><button class="btn" id="s-copy">${t('copy')}</button><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(`${t('store')}: ${S.storeUrl}`)}" target="_blank" rel="noopener">${t('whatsapp')}</a></div></div>
+    <div class="card"><div class="item"><span>${t('regDevices')}</span><b>${S.devices} ${t('of100')}</b></div><a class="btn" href="/" id="s-admin">${t('adminPanel')}</a></div>`;
+  $('#s-copy').onclick = () => copy(S.storeUrl);
+}
+function sSettings() {
+  const p = prefs.get(), th = p.theme || 'auto';
+  $('#sview').innerHTML = `<h1>${t('sSettings')}</h1><div class="card">
+      <div class="item"><span>${t('lang')}</span><span class="seg" id="p-lang"><button data-v="ar" class="${lang === 'ar' ? 'on' : ''}">العربية</button><button data-v="en" class="${lang === 'en' ? 'on' : ''}">English</button></span></div>
+      <div class="item"><span>${t('theme')}</span><span class="seg" id="p-theme">${['light', 'dark', 'auto'].map((k) => `<button data-v="${k}" class="${th === k ? 'on' : ''}">${t(k)}</button>`).join('')}</span></div>
+    </div>
+    <div class="card"><button class="btn danger" id="s-out">${t('logout')}</button></div>
+    <div class="note" style="text-align:center">${t('store')} · RA7AL AL3OMR · v${esc(S.version)}</div>`;
+  $('#p-lang').onclick = (e) => { const b = e.target.closest('[data-v]'); if (!b) return; prefs.set({ lang: b.dataset.v }); applyLangTheme(b.dataset.v, prefs.get().theme || 'auto'); document.title = t('store'); storeShell(); };
+  $('#p-theme').onclick = (e) => { const b = e.target.closest('[data-v]'); if (!b) return; prefs.set({ theme: b.dataset.v }); applyLangTheme(lang, b.dataset.v); document.title = t('store'); storeShell(); };
+  $('#s-out').onclick = async () => { await api('logout', { body: {} }); boot(); };
+}
+async function storeView() {
+  S = await api('store/state');
+  const p = prefs.get(); applyLangTheme(p.lang || S.settings.lang, p.theme || 'auto'); document.title = t('store');
+  storeShell();
+}
+
 // ---------- البداية ----------
 async function boot() {
   closeSheet();
   let b; try { b = await api('boot'); } catch { $('#root').innerHTML = `<div class="auth"><div class="card">${t('error')}</div></div>`; return; }
-  applyLangTheme(b.lang, b.theme);
+  applyLangTheme(storeMode ? (prefs.get().lang || b.lang) : b.lang, storeMode ? (prefs.get().theme || 'auto') : b.theme);
+  if (storeMode) { if (b.setup || !b.role) { sTab = 'apps'; sCat = 'all'; sQuery = ''; authView('store'); document.title = t('store'); return; } return storeView(); }
   if (b.setup) return authView('setup');
   if (famMode) { if (!b.role) return authView('family'); return familyView(); }
   if (b.role !== 'admin') return authView('login');
   await refresh(); shell();
 }
 $('#sheet-bg').onclick = closeSheet;
-matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => S && S.settings && applyLangTheme(S.settings.lang, S.settings.theme));
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', () => S && S.settings && (storeMode ? applyLangTheme(lang, prefs.get().theme || 'auto') : applyLangTheme(S.settings.lang, S.settings.theme)));
 window.__ra7al = { get S() { return S; } };
 boot();
 })();
