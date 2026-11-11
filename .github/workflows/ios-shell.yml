@@ -1,0 +1,43 @@
+name: iPhone app shell binary
+on:
+  push:
+    branches: [main]
+    paths: ['ios-shell/**', '.github/workflows/ios-shell.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  shell:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the shell for iPhone (arm64) and for the simulator
+        working-directory: ios-shell
+        run: |
+          set -e
+          SRC="main.m AppDelegate.m ViewController.m"
+          mkdir -p bin
+          xcrun -sdk iphoneos clang -arch arm64 -miphoneos-version-min=15.0 -fobjc-arc -O2 -framework UIKit -framework WebKit $SRC -o bin/App-device
+          xcrun -sdk iphonesimulator clang -arch arm64 -mios-simulator-version-min=15.0 -fobjc-arc -framework UIKit -framework WebKit $SRC -o bin/App-sim
+          lipo -info bin/App-device
+      - name: Launch test on an iPhone simulator (server unreachable → retry screen, no crash)
+        working-directory: ios-shell
+        run: |
+          set -e
+          APP=sim/App.app; mkdir -p "$APP"; cp bin/App-sim "$APP/App"
+          python3 make_plist.py test-app.json "$APP/Info.plist"; plutil -lint "$APP/Info.plist"
+          sips -s format png -z 120 120 test-icon.png --out "$APP/AppIcon60x60@2x.png" >/dev/null
+          codesign -s - --force "$APP"
+          DEV=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next(x['udid'] for k,v in d.items() if 'iOS' in k for x in v if 'iPhone' in x['name']))")
+          xcrun simctl boot "$DEV"; xcrun simctl bootstatus "$DEV" -b
+          xcrun simctl install "$DEV" "$APP"; xcrun simctl launch "$DEV" com.ra7al.shelltest
+          sleep 25
+          xcrun simctl spawn "$DEV" launchctl list | grep -q com.ra7al.shelltest && echo "✓ shell still running"
+          xcrun simctl io "$DEV" screenshot ../shell-sim.png
+      - name: Publish the binaries to the shell-bin branch
+        run: |
+          set -e
+          mkdir pub && cp ios-shell/bin/App-device ios-shell/bin/App-sim shell-sim.png pub/
+          cd pub && git init -q -b shell-bin && git add -A
+          git -c user.name="github-actions" -c user.email="actions@github.com" commit -qm "shell binaries ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" shell-bin
