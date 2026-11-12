@@ -29,6 +29,7 @@ def plist(c):
   <key>R7Servers</key>{arr(c['servers'])}
   <key>R7Markers</key>{arr(c['markers'])}
   <key>R7ArabicFont</key><{'true' if c.get('arabic_font') else 'false'}/>
+  <key>R7SameHost</key><{'true' if c.get('same_host') else 'false'}/>
 </dict></plist>
 '''
 c=json.load(open(sys.argv[1])); open(sys.argv[2],'w').write(plist(c))

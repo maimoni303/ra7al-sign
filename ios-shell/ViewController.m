@@ -1,5 +1,5 @@
 #import "ViewController.h"
-// RA7AL private app shell — opens a self-hosted web app (home network first, then Tailscale). Settings come from Info.plist (R7Servers, R7Markers, R7Title, R7ArabicFont).
+// RA7AL private app shell — opens a self-hosted web app (home network first, then Tailscale). Settings come from Info.plist (R7Servers, R7Markers, R7Title, R7ArabicFont, R7SameHost).
 static id Cfg(NSString *k) { return [NSBundle.mainBundle objectForInfoDictionaryKey:k]; }
 static NSArray<NSString *> *Defaults(void) { return Cfg(@"R7Servers") ?: @[]; }
 @interface ViewController ()
@@ -84,7 +84,9 @@ static NSArray<NSString *> *Defaults(void) { return Cfg(@"R7Servers") ?: @[]; }
         [UIApplication.sharedApplication openURL:a.request.URL options:@{} completionHandler:nil];
         h(WKNavigationActionPolicyCancel); return;
     }
-    if (self.base && ![u hasPrefix:self.base] && ([u hasPrefix:@"http"] || [u hasPrefix:@"mailto:"] || [u hasPrefix:@"tel:"])) { [UIApplication.sharedApplication openURL:a.request.URL options:@{} completionHandler:nil]; h(WKNavigationActionPolicyCancel); return; }
+    // R7SameHost: any port on the server's own host stays inside the app (one app that hosts several web apps, e.g. a login portal).
+    BOOL sameHost = [Cfg(@"R7SameHost") boolValue] && self.base && [a.request.URL.host isEqualToString:[NSURL URLWithString:self.base].host];
+    if (self.base && !sameHost && ![u hasPrefix:self.base] && ([u hasPrefix:@"http"] || [u hasPrefix:@"mailto:"] || [u hasPrefix:@"tel:"])) { [UIApplication.sharedApplication openURL:a.request.URL options:@{} completionHandler:nil]; h(WKNavigationActionPolicyCancel); return; }
     h(WKNavigationActionPolicyAllow);
 }
 - (WKWebView *)webView:(WKWebView *)w createWebViewWithConfiguration:(WKWebViewConfiguration *)c forNavigationAction:(WKNavigationAction *)a windowFeatures:(WKWindowFeatures *)f {
